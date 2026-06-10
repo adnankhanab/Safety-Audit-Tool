@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Safetipin-Style Safety Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef0ec; --surface:#ffffff; --surface-2:#f6f7f4;
+    --ink:#191b18; --muted:#6c706a; --line:#dadcd5;
+    --primary:#0e5e8a; --primary-soft:#dceaf3;
+    --s0:#d64545; --s1:#e08a2b; --s2:#a9b321; --s3:#2f9e63;
+    --shadow:0 1px 0 rgba(0,0,0,.04),0 10px 26px rgba(20,30,25,.06);
+  }
+  body.night{
+    --bg:#0d1118; --surface:#19212b; --surface-2:#141b23;
+    --ink:#e9e8e2; --muted:#98a1ab; --line:#2a3441;
+    --primary:#41a7d6; --primary-soft:#102633;
+    --s0:#e05a5a; --s1:#eb9a3e; --s2:#c2cc46; --s3:#46c07e;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--ink);
+    transition:background .35s,color .35s;padding-bottom:138px;}
+  .wrap{max-width:580px;margin:0 auto;padding:0 15px;}
+
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+    padding:13px 15px 11px;transition:background .35s;}
+  .head-row{max-width:580px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .brand h1{font-family:'Archivo';font-weight:800;font-size:17px;margin:0;letter-spacing:-.02em;}
+  .brand span{font-size:10.5px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.12em;}
+  .toggle{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px;
+    font-family:'Archivo';font-weight:700;font-size:12px;flex-shrink:0;}
+  .toggle button{border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.2s;}
+  .toggle button.on{background:var(--primary);color:#fff;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);
+    margin-top:13px;overflow:hidden;}
+  .card-pad{padding:15px;}
+  .field-label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+  input[type=text],input[type=number],textarea{width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border .2s;}
+  input:focus,textarea:focus{border-color:var(--primary);}
+  textarea{resize:vertical;min-height:62px;}
+  .row2{display:flex;gap:9px;}.row2>div{flex:1;}
+
+  .btn{font-family:'Archivo';font-weight:700;font-size:14px;border:0;border-radius:11px;padding:12px 14px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:transform .08s,filter .2s;}
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);}
+  .btn-accent{background:var(--s1);color:#fff;}
+  .btn-sm{font-size:12px;padding:9px 11px;width:auto;}
+
+  .gps-status{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:16px;line-height:1.4;}
+  .gps-status.ok{color:var(--s3);font-weight:600;}.gps-status.err{color:var(--s0);font-weight:600;}
+  .sub-note{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45;}
+
+  .photo-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;}
+  .photo-thumb{position:relative;width:70px;height:70px;border-radius:9px;overflow:hidden;border:1px solid var(--line);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;
+    background:rgba(0,0,0,.65);color:#fff;border:0;font-size:12px;cursor:pointer;}
+  .photo-count{font-size:11.5px;margin-top:8px;font-weight:600;}
+  .photo-count.warn{color:var(--s1);}.photo-count.ok{color:var(--s3);}
+
+  /* Parameter card */
+  .param{padding:15px;border-top:1px solid var(--line);}
+  .param:first-child{border-top:0;}
+  .param-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .param-name{font-family:'Archivo';font-weight:700;font-size:15.5px;letter-spacing:-.01em;}
+  .param-score{font-family:'Archivo';font-weight:800;font-size:13px;color:var(--muted);}
+  .param-def{font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:11px;}
+  .scale{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .scale button{border:1.5px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 4px 8px;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;color:var(--ink);}
+  .scale button .n{font-family:'Archivo';font-weight:800;font-size:17px;line-height:1;color:var(--muted);}
+  .scale button .l{font-size:10px;font-weight:600;text-align:center;line-height:1.1;color:var(--muted);}
+  .scale button.sel.v0{border-color:var(--s0);background:var(--s0);}
+  .scale button.sel.v1{border-color:var(--s1);background:var(--s1);}
+  .scale button.sel.v2{border-color:var(--s2);background:var(--s2);}
+  .scale button.sel.v3{border-color:var(--s3);background:var(--s3);}
+  .scale button.sel .n,.scale button.sel .l{color:#fff;}
+  .level-desc{font-size:12px;line-height:1.45;margin-top:9px;padding:9px 11px;border-radius:9px;
+    background:var(--surface-2);border-left:3px solid var(--line);color:var(--ink);min-height:14px;display:none;}
+  .level-desc.show{display:block;}
+  .level-desc.v0{border-left-color:var(--s0);}.level-desc.v1{border-left-color:var(--s1);}
+  .level-desc.v2{border-left-color:var(--s2);}.level-desc.v3{border-left-color:var(--s3);}
+
+  /* Guidelines */
+  details.guide{margin-top:13px;background:var(--surface);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden;}
+  details.guide summary{padding:14px 15px;font-family:'Archivo';font-weight:700;font-size:13.5px;cursor:pointer;list-style:none;
+    display:flex;align-items:center;justify-content:space-between;}
+  details.guide summary::-webkit-details-marker{display:none;}
+  details.guide summary::after{content:"+";font-size:18px;color:var(--muted);}
+  details.guide[open] summary::after{content:"–";}
+  .guide-body{padding:0 15px 15px;font-size:12.5px;line-height:1.6;color:var(--muted);}
+  .guide-body li{margin-bottom:4px;}
+
+  .saved-head{display:flex;align-items:center;justify-content:space-between;margin:22px 0 0;}
+  .saved-head h2{font-family:'Archivo';font-weight:700;font-size:15px;margin:0;}
+  .saved-item{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-top:9px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:var(--shadow);}
+  .si-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .si-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+  .pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-right:5px;}
+  .pill.day{background:var(--primary-soft);color:var(--primary);}.pill.night{background:var(--s1);color:#fff;}
+  .del-btn{flex-shrink:0;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:7px 10px;font-size:12px;cursor:pointer;font-weight:600;}
+  .export-row{display:flex;gap:8px;margin-top:11px;}.empty{color:var(--muted);font-size:13px;text-align:center;padding:18px;}
+
+  .score-bar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.1);}
+  .score-inner{max-width:580px;margin:0 auto;padding:11px 15px 15px;}
+  .score-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;}
+  .score-num{font-family:'Archivo';font-weight:800;font-size:14px;}
+  .score-num b{color:var(--primary);font-size:21px;}
+  .feel-tag{font-family:'Archivo';font-weight:700;font-size:11px;padding:4px 9px;border-radius:7px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);}
+  .meter{height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--line);}
+  .meter span{display:block;height:100%;width:0;transition:width .3s,background .3s;}
+  .save-row{display:flex;gap:8px;margin-top:10px;}.save-row .btn{flex:1;}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:148px;z-index:50;
+    background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:600;font-size:13px;
+    opacity:0;transition:.3s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .sec-title{font-family:'Archivo';font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:22px 4px 0;}
+  .infra-q{padding:13px 15px;border-top:1px solid var(--line);}
+  .infra-q:first-child{border-top:0;}
+  .infra-label{font-size:14px;font-weight:500;line-height:1.35;margin-bottom:9px;}
+  .opts{display:flex;flex-wrap:wrap;gap:6px;}
+  .opts button{border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:9px;
+    padding:8px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
+  .opts button.sel{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .cond{margin-top:10px;padding-left:12px;border-left:3px solid var(--line);}
+  .cond .field-label{margin-bottom:6px;}
+  .opts button.cg.sel{background:var(--s3);border-color:var(--s3);}
+  .opts button.cs.sel{background:var(--s1);border-color:var(--s1);}
+  .opts button.cb.sel{background:var(--s0);border-color:var(--s0);}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-row">
+    <div class="brand">
+      <h1>Safety Audit</h1>
+      <span>Safetipin Rubric · 0–3 Scale</span>
+    </div>
+    <div class="toggle">
+      <button id="dayBtn" class="on" onclick="setMode('day')">☀ DAY</button>
+      <button id="nightBtn" onclick="setMode('night')">☾ NIGHT</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card card-pad">
+    <div class="field-label">Location Name</div>
+    <input type="text" id="stopName" placeholder="e.g. E Kal Mandapam Road">
+    <div class="row2" style="margin-top:12px;">
+      <div><div class="field-label">Audit ID</div><input type="text" id="siteId" placeholder="A-01"></div>
+      <div><div class="field-label">Auditor</div><input type="text" id="auditor" placeholder="Name / age"></div>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="field-label">Location</div>
+    <button class="btn btn-primary" onclick="fetchGPS()">📍 Fetch My Location</button>
+    <div class="gps-status" id="gpsStatus">No location captured yet.</div>
+    <div class="row2" style="margin-top:10px;">
+      <div><div class="field-label">Latitude</div><input type="number" step="any" id="lat" placeholder="13.0827"></div>
+      <div><div class="field-label">Longitude</div><input type="number" step="any" id="lng" placeholder="80.2707"></div>
+    </div>
+    <div style="margin-top:10px;">
+      <div class="field-label">Or paste a Google Maps link</div>
+      <input type="text" id="mapsLink" placeholder="https://maps.google.com/...">
+      <button class="btn btn-ghost btn-sm" style="margin-top:7px;" onclick="parseMapsLink()">Extract coordinates</button>
+    </div>
+    <div class="sub-note">Auto-location needs HTTPS or the file opened on-device. If blocked, type coordinates or paste a Maps link.</div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="field-label">Photos</div>
+    <label class="btn btn-accent" style="cursor:pointer;">📷 Add Photo
+      <input type="file" accept="image/*" capture="environment" multiple style="display:none;" onchange="addPhotos(event)"></label>
+    <div class="photo-count warn" id="photoCount">0 photos — minimum 3 required (landscape).</div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+
+  <div class="sec-title">A · Perception — Safetipin Rubric (0–3)</div>
+  <div class="card" id="paramList"></div>
+
+  <div class="sec-title">B · Infrastructure &amp; Amenities</div>
+  <div class="card" id="infraList"></div>
+
+  <div class="card card-pad">
+    <div class="field-label">Comments (required)</div>
+    <textarea id="notes" placeholder="Be explicit — what makes this place feel safe or unsafe? e.g. 'Mostly men, no security, dim lighting under trees.'"></textarea>
+  </div>
+
+  <details class="guide">
+    <summary>Audit Guidelines (Do's &amp; Don'ts)</summary>
+    <div class="guide-body">
+      <ul>
+        <li>Phone fully charged, mobile data ON.</li>
+        <li>Allow location &amp; camera permission before starting.</li>
+        <li>Take photos in <b>landscape</b> only — minimum 3 per audit.</li>
+        <li>Conduct an audit every <b>100 metres</b>.</li>
+        <li>Add explicit comments for every audit.</li>
+        <li>On poor network, move to better connectivity before submitting.</li>
+        <li>If the phone freezes, restart it.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="saved-head"><h2>Saved Audits (<span id="savedCount">0</span>)</h2></div>
+  <div id="savedList"></div>
+  <div class="export-row">
+    <button class="btn btn-ghost btn-sm" onclick="exportData('csv')">⬇ CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportData('json')">⬇ JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="clearAll()">🗑 Clear All</button>
+  </div>
+</div>
+
+<div class="score-bar">
+  <div class="score-inner">
+    <div class="score-top">
+      <div class="score-num"><b id="scoreNum">0</b> / 27 &nbsp;<span style="color:var(--muted);font-size:12px;font-weight:600;" id="scorePct">0%</span></div>
+      <div class="feel-tag" id="feelTag">Feeling: —</div>
+    </div>
+    <div class="meter"><span id="meterFill"></span></div>
+    <div class="save-row">
+      <button class="btn btn-ghost" onclick="resetForm()">New / Clear</button>
+      <button class="btn btn-primary" onclick="saveAudit()">💾 Save Audit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== Safetipin My Safetipin App rubric (extracted from Krea safety audits PDF) ===== */
+const PARAMS = [
+  {id:"lighting", name:"Lighting", def:"Availability of enough light to see around you",
+    levels:["No streetlight or other light source","Can see lights but the area is dimly lit","Light is enough for clear vision","Whole area is brightly lit"],
+    short:["None","Little","Enough","Bright"]},
+  {id:"openness", name:"Openness", def:"Ability to see and move in all directions",
+    levels:["Many blind corners and no clear sightline","Able to see a little ahead and around","Able to see in most directions","Can see clearly in all directions"],
+    short:["Not Open","Partly","Mostly","Completely"]},
+  {id:"visibility", name:"Visibility", def:"Vendors, shops, buildings from where you can be seen",
+    levels:["No window/building entrance/vendor overlooking this point","Fewer than 5 windows or entrances overlooking","Fewer than 10 windows or entrances overlooking","More than 10 windows or entrances overlooking"],
+    short:["No Eyes","Few Eyes","More Eyes","Highly Vis."]},
+  {id:"people", name:"People", def:"Number of people walking around you",
+    levels:["No one in sight","1 or 2 people visible","3–10 people visible","More than 10 visible / many within touching distance"],
+    short:["Deserted","Few","Some Crowd","Crowded"]},
+  {id:"security", name:"Security", def:"Availability of police or private security guards",
+    levels:["No guards or police visible in surrounding area","Some private security visible but not nearby","Private security within hailing distance","Police / reliable security within hailing distance"],
+    short:["None","Minimal","Moderate","High"]},
+  {id:"walkpath", name:"Walk Path", def:"Either a pavement or road with space to walk",
+    levels:["No walking path available","Path exists but in very bad condition","Can walk but not run","Easy to walk fast or run"],
+    short:["None","Poor","Fair","Good"]},
+  {id:"transport", name:"Public Transport", def:"Availability of any form of public transport",
+    levels:["No train/metro/bus/local mode within 10 min walk","Stop between 5–10 minutes walk","Stop between 2–5 minutes walk","Stop within 2 minutes walk"],
+    short:["Unavailable","Distant","Nearby","Very Close"]},
+  {id:"gender", name:"Gender Usage", def:"Presence of women and children around you",
+    levels:["No one in sight, or only men","Mostly men, very few women or children","Some women and children","Balance of all genders, or more women & children"],
+    short:["Not Diverse","Somewhat","Fairly","Diverse"]},
+  {id:"feeling", name:"Feeling", def:"How safe you feel at that place",
+    levels:["Will never venture here without sufficient escort","Will avoid this place whenever possible","Feel safe enough, but will be careful","Feel safe even after dark"],
+    short:["Frightening","Uncomfort.","Acceptable","Comfortable"]},
+];
+const FEEL = ["Frightening","Uncomfortable","Acceptable","Comfortable"];
+
+/* ===== Infrastructure & amenities checklist (user-defined) ===== */
+const INFRA = [
+  {id:"nameboard", q:"Name board specifying the bus stop name", type:"yesno"},
+  {id:"shelter",   q:"Bus shelter", type:"yesno", rate:"shelter_cond", rateLabel:"Condition of bus shelter"},
+  {id:"roof",      q:"Overhead roof", type:"yesno", rate:"roof_cond", rateLabel:"Condition of roof"},
+  {id:"routemap",  q:"Route map", type:"yesno"},
+  {id:"businfo",   q:"Incoming-bus information (board specifying bus numbers)", type:"yesno"},
+  {id:"eta",       q:"Digital display board with bus arrival schedule (ETA)", type:"yesno"},
+  {id:"panic",     q:"Panic button", type:"yesno"},
+  {id:"seating",   q:"Proper seating arrangement", type:"yesno", rate:"seating_cond", rateLabel:"Condition of seating"},
+  {id:"helpline",  q:"Helpline number displayed", type:"multi",
+     options:["Police","Women's Helpline","Transport Dept.","Not available"], none:"Not available"},
+  {id:"cctv",      q:"CCTV", type:"yesno"},
+  {id:"handrails", q:"Handrails", type:"yesno"},
+  {id:"toilet",    q:"Toilet", type:"multi",
+     options:["Men","Women","Gender Neutral","Not available"], none:"Not available"},
+  {id:"water",     q:"Drinking water facility", type:"yesno"},
+  {id:"dustbin",   q:"Dustbin", type:"yesno"},
+  {id:"complaint", q:"Complaint box", type:"yesno"},
+  {id:"ramp",      q:"Ramp for physically challenged / reduced-mobility users", type:"yesno"},
+  {id:"cycle",     q:"Cycle parking", type:"yesno"},
+  {id:"crossing",  q:"Pedestrian crossing at the bus stop", type:"yesno"},
+];
+
+let mode="day", photos=[], scores={}, infra={}, audits=[];
+const KEY="safetipinAudits_v1";
+function loadStore(){try{const r=localStorage.getItem(KEY);audits=r?JSON.parse(r):[];}catch(e){audits=window._mem||[];}}
+function saveStore(){try{localStorage.setItem(KEY,JSON.stringify(audits));}catch(e){window._mem=audits;}}
+
+function renderParams(){
+  const c=document.getElementById("paramList");c.innerHTML="";
+  PARAMS.forEach(p=>{
+    const sel=scores[p.id];
+    const div=document.createElement("div");div.className="param";
+    div.innerHTML=`
+      <div class="param-head">
+        <span class="param-name">${p.name}</span>
+        <span class="param-score" id="ps-${p.id}">${sel===undefined?"—":sel+"/3"}</span>
+      </div>
+      <div class="param-def">${p.def}</div>
+      <div class="scale">
+        ${[0,1,2,3].map(v=>`<button class="${sel===v?'sel v'+v:''}" onclick="setScore('${p.id}',${v})">
+            <span class="n">${v}</span><span class="l">${p.short[v]}</span></button>`).join("")}
+      </div>
+      <div class="level-desc ${sel!==undefined?'show v'+sel:''}" id="ld-${p.id}">${sel!==undefined?p.levels[sel]:""}</div>`;
+    c.appendChild(div);
+  });
+  updateScore();
+}
+function setScore(id,v){
+  scores[id]=v;
+  const p=PARAMS.find(x=>x.id===id);
+  document.querySelectorAll(`#paramList .param`).forEach(()=>{});
+  // re-render just this param's buttons + desc
+  const parent=document.getElementById("ps-"+id).closest(".param");
+  parent.querySelectorAll(".scale button").forEach((b,i)=>{
+    b.className=(i===v)?"sel v"+v:"";
+  });
+  document.getElementById("ps-"+id).textContent=v+"/3";
+  const ld=document.getElementById("ld-"+id);
+  ld.textContent=p.levels[v];ld.className="level-desc show v"+v;
+  updateScore();
+}
+function updateScore(){
+  const vals=PARAMS.map(p=>scores[p.id]).filter(v=>v!==undefined);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const pct=Math.round(total/27*100);
+  document.getElementById("scoreNum").textContent=total;
+  document.getElementById("scorePct").textContent=pct+"%";
+  const fill=document.getElementById("meterFill");
+  fill.style.width=pct+"%";
+  fill.style.background=pct<33?"var(--s0)":pct<55?"var(--s1)":pct<78?"var(--s2)":"var(--s3)";
+  const f=scores.feeling;
+  const tag=document.getElementById("feelTag");
+  tag.textContent="Feeling: "+(f===undefined?"—":FEEL[f]);
+  tag.style.background=f===undefined?"var(--surface-2)":["var(--s0)","var(--s1)","var(--s2)","var(--s3)"][f];
+  tag.style.color=f===undefined?"var(--muted)":"#fff";
+  tag.style.borderColor="transparent";
+}
+
+function renderInfra(){
+  const c=document.getElementById("infraList");c.innerHTML="";
+  INFRA.forEach(it=>{
+    const div=document.createElement("div");div.className="infra-q";
+    let html=`<div class="infra-label">${it.q}</div>`;
+    if(it.type==="yesno"){
+      html+=`<div class="opts">${["Yes","No"].map(o=>
+        `<button class="${infra[it.id]===o?'sel':''}" onclick="setYesNo('${it.id}','${o}')">${o}</button>`).join("")}</div>`;
+      if(it.rate && infra[it.id]==="Yes"){
+        const rv=infra[it.rate], cm={"Good":"cg","Satisfactory":"cs","Bad":"cb"};
+        html+=`<div class="cond"><div class="field-label">${it.rateLabel}</div><div class="opts">${
+          ["Good","Satisfactory","Bad"].map(o=>
+            `<button class="${cm[o]} ${rv===o?'sel':''}" onclick="setRate('${it.rate}','${o}')">${o}</button>`).join("")}</div></div>`;
+      }
+    } else if(it.type==="multi"){
+      const cur=infra[it.id]||[];
+      html+=`<div class="opts">${it.options.map(o=>
+        `<button class="${cur.includes(o)?'sel':''}" onclick="toggleMulti('${it.id}',&quot;${o}&quot;,'${it.none||''}')">${o}</button>`).join("")}</div>`;
+    }
+    div.innerHTML=html;c.appendChild(div);
+  });
+}
+function setYesNo(id,v){const it=INFRA.find(x=>x.id===id);infra[id]=v;
+  if(it.rate && v!=="Yes") delete infra[it.rate];renderInfra();}
+function setRate(id,v){infra[id]=v;renderInfra();}
+function toggleMulti(id,opt,none){
+  let cur=infra[id]?[...infra[id]]:[];
+  if(none && opt===none){cur=cur.includes(none)?[]:[none];}
+  else{cur=cur.filter(x=>x!==none);
+    cur.includes(opt)?cur.splice(cur.indexOf(opt),1):cur.push(opt);}
+  infra[id]=cur;renderInfra();}
+
+function setMode(m){
+  mode=m;document.body.classList.toggle("night",m==="night");
+  document.getElementById("dayBtn").classList.toggle("on",m==="day");
+  document.getElementById("nightBtn").classList.toggle("on",m==="night");
+}
+
+function fetchGPS(){
+  const s=document.getElementById("gpsStatus");
+  if(!navigator.geolocation){s.className="gps-status err";s.textContent="Geolocation not supported.";return;}
+  s.className="gps-status";s.textContent="Locating… allow the permission prompt.";
+  navigator.geolocation.getCurrentPosition(
+    pos=>{const{latitude,longitude,accuracy}=pos.coords;
+      document.getElementById("lat").value=latitude.toFixed(6);
+      document.getElementById("lng").value=longitude.toFixed(6);
+      s.className="gps-status ok";s.textContent=`Captured ±${Math.round(accuracy)} m · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;},
+    err=>{s.className="gps-status err";s.textContent="Couldn't get location ("+err.message+"). Enter manually or paste a Maps link.";},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+function parseMapsLink(){
+  const v=document.getElementById("mapsLink").value,s=document.getElementById("gpsStatus");
+  let m=v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||v.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/)||
+        v.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||v.match(/(-?\d{1,2}\.\d{3,}),\s*(-?\d{1,3}\.\d{3,})/);
+  if(m){document.getElementById("lat").value=parseFloat(m[1]).toFixed(6);
+    document.getElementById("lng").value=parseFloat(m[2]).toFixed(6);
+    s.className="gps-status ok";s.textContent=`From link · ${m[1]}, ${m[2]}`;}
+  else{s.className="gps-status err";s.textContent="Couldn't find coordinates in that link.";}
+}
+
+function addPhotos(e){
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{const img=new Image();img.onload=()=>{
+      const max=1280,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const cv=document.createElement("canvas");cv.width=img.width*sc;cv.height=img.height*sc;
+      cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+      photos.push(cv.toDataURL("image/jpeg",0.55));renderPhotos();};img.src=ev.target.result;};
+    r.readAsDataURL(f);});
+  e.target.value="";
+}
+function renderPhotos(){
+  const g=document.getElementById("photoGrid");g.innerHTML="";
+  photos.forEach((p,i)=>{const d=document.createElement("div");d.className="photo-thumb";
+    d.innerHTML=`<img src="${p}"><button onclick="removePhoto(${i})">×</button>`;g.appendChild(d);});
+  const pc=document.getElementById("photoCount");
+  if(photos.length>=3){pc.className="photo-count ok";pc.textContent=photos.length+" photos ✓";}
+  else{pc.className="photo-count warn";pc.textContent=photos.length+" photos — minimum 3 required (landscape).";}
+}
+function removePhoto(i){photos.splice(i,1);renderPhotos();}
+
+function saveAudit(){
+  const name=document.getElementById("stopName").value.trim();
+  if(!name){toast("Enter a location name");return;}
+  if(PARAMS.some(p=>scores[p.id]===undefined)){toast("Rate all 9 parameters first");return;}
+  const notes=document.getElementById("notes").value.trim();
+  if(!notes){toast("Comments are required");return;}
+  if(photos.length<3){if(!confirm("Fewer than 3 photos. Save anyway?"))return;}
+  const total=PARAMS.reduce((a,p)=>a+scores[p.id],0);
+  audits.unshift({name,mode,siteId:document.getElementById("siteId").value.trim(),
+    auditor:document.getElementById("auditor").value.trim(),
+    lat:document.getElementById("lat").value,lng:document.getElementById("lng").value,
+    notes,scores:{...scores},infra:{...infra},total,photos:[...photos],timestamp:new Date().toISOString()});
+  saveStore();renderSaved();toast("Audit saved ✓");resetForm();
+}
+function resetForm(){
+  ["stopName","siteId","lat","lng","mapsLink","notes"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("gpsStatus").className="gps-status";
+  document.getElementById("gpsStatus").textContent="No location captured yet.";
+  scores={};photos=[];infra={};renderPhotos();renderParams();renderInfra();
+}
+
+function renderSaved(){
+  const list=document.getElementById("savedList");
+  document.getElementById("savedCount").textContent=audits.length;
+  if(!audits.length){list.innerHTML='<div class="empty">No saved audits yet.</div>';return;}
+  list.innerHTML="";
+  audits.forEach((a,i)=>{const d=new Date(a.timestamp);
+    const div=document.createElement("div");div.className="saved-item";
+    div.innerHTML=`<div style="min-width:0;">
+      <div class="si-name">${a.name}</div>
+      <div class="si-meta"><span class="pill ${a.mode}">${a.mode.toUpperCase()}</span>
+        Score ${a.total}/27 · ${a.siteId||'—'} · ${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+        ${a.lat?' · 📍':''}${a.photos.length?' · 📷'+a.photos.length:''}</div></div>
+      <button class="del-btn" onclick="delAudit(${i})">Delete</button>`;
+    list.appendChild(div);});
+}
+function delAudit(i){audits.splice(i,1);saveStore();renderSaved();}
+function clearAll(){if(audits.length&&confirm("Delete all saved audits?")){audits=[];saveStore();renderSaved();}}
+
+function exportData(type){
+  if(!audits.length){toast("Nothing to export");return;}
+  let blob,fname;
+  if(type==="json"){blob=new Blob([JSON.stringify(audits,null,2)],{type:"application/json"});fname="safetipin_audits.json";}
+  else{
+    const infraCols=[];INFRA.forEach(it=>{infraCols.push(it.id);if(it.rate)infraCols.push(it.rate);});
+    const head=["name","audit_id","auditor","mode","lat","lng","total_27",
+      ...PARAMS.map(p=>p.id),...PARAMS.map(p=>p.id+"_label"),
+      ...infraCols,"comments","photos","timestamp"];
+    const rows=audits.map(a=>{
+      const sc=PARAMS.map(p=>a.scores[p.id]);
+      const lab=PARAMS.map(p=>p.short[a.scores[p.id]]);
+      const inf=infraCols.map(col=>{const v=a.infra?a.infra[col]:undefined;return Array.isArray(v)?v.join("; "):(v??"");});
+      return [a.name,a.siteId,a.auditor,a.mode,a.lat,a.lng,a.total,...sc,...lab,...inf,a.notes,a.photos.length,a.timestamp]
+        .map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",");});
+    blob=new Blob([head.join(",")+"\n"+rows.join("\n")],{type:"text/csv"});fname="safetipin_audits.csv";}
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=fname;a.click();
+  URL.revokeObjectURL(url);toast("Exported "+fname);
+}
+
+let tt;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2200);}
+
+loadStore();renderParams();renderInfra();renderPhotos();renderSaved();
+</script>
+</body>
+</html>
